@@ -2,3 +2,4 @@ Flask
 requests
 gunicorn  # Adicione o Gunicorn
 pandas
+python-binance
