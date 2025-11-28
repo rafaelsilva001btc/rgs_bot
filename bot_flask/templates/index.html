@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RGS Bot Trade V1.0 - Dashboard</title>
+    <!-- Carrega o Tailwind CSS para estilização moderna e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuração do Tailwind para usar a fonte Inter -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-blue': '#1E90FF', // Cor de cabeçalho/rodapé
+                        'sidebar-gray': '#C5C5C5', // Cor do painel de parâmetros
+                        'bg-light': '#ECECEC', // Cor de fundo
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Carrega a biblioteca Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <!-- Estilo personalizado para classes que o Tailwind não cobre diretamente -->
+    <style>
+        .connected { color: green; font-weight: bold; }
+        .disconnected { color: red; font-weight: bold; }
+        /* Garante que o canvas seja flexível dentro do container */
+        #chartCanvas {
+            max-height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-bg-light font-sans min-h-screen flex flex-col">
+
+    <!-- Cabeçalho (Simulando o Canvas Azul) -->
+    <header class="bg-primary-blue text-white p-2 shadow-lg flex justify-center items-center h-10">
+        <h1 class="text-xl font-bold">RGS Bot Trade V1.0</h1>
+    </header>
+
+    <!-- Container Principal (Layout de duas colunas) -->
+    <main class="flex flex-1 p-4 space-x-4">
+        
+        <!-- Sidebar: Parâmetros Iniciais (Simulando o Retângulo Cinza) -->
+        <div id="sidebar" class="bg-sidebar-gray p-4 rounded-lg shadow-md w-full max-w-xs overflow-y-auto">
+            <h2 class="text-lg font-bold mb-4 text-center border-b border-gray-400 pb-2">Parâmetros Iniciais</h2>
+
+            <div class="grid grid-cols-2 gap-y-2 gap-x-3 text-sm">
+                <!-- Par (Moeda) -->
+                <label for="symbol" class="col-span-1 py-1">Par (Moeda):</label>
+                <select id="symbol" class="col-span-1 p-1 rounded">
+                    <option value="BTCUSDT">BTCUSDT</option>
+                    <option value="ETHUSDT">ETHUSDT</option>
+                    <option value="BNBUSDT">BNBUSDT</option>
+                    <option value="SOLUSDT">SOLUSDT</option>
+                </select>
+
+                <!-- Modo Operação -->
+                <label for="mode" class="col-span-1 py-1">Modo Operação:</label>
+                <select id="mode" class="col-span-1 p-1 rounded">
+                    <option value="SIMULADO">SIMULADO</option>
+                    <option value="REAL">REAL</option>
+                </select>
+
+                <!-- Estratégia -->
+                <label for="strategy" class="col-span-1 py-1">Estratégia:</label>
+                <select id="strategy" class="col-span-1 p-1 rounded">
+                    <option value="RSI + Médias">RSI + Médias</option>
+                </select>
+
+                <!-- Saldo (USD) -->
+                <label for="saldo" class="col-span-1 py-1">Saldo (USD):</label>
+                <input type="number" id="saldo" value="100.0000" step="0.0001" class="col-span-1 p-1 rounded text-right font-mono font-bold" readonly>
+
+                <!-- RSI Período -->
+                <label for="rsi_period" class="col-span-1 py-1">RSI Período:</label>
+                <input type="number" id="rsi_period" value="14" class="col-span-1 p-1 rounded text-right">
+
+                <!-- RSI Sobrecompra -->
+                <label for="rsi_overbuy" class="col-span-1 py-1">RSI Sobrecompra:</label>
+                <input type="number" id="rsi_overbuy" value="70" class="col-span-1 p-1 rounded text-right">
+
+                <!-- RSI Sobrevenda -->
+                <label for="rsi_oversell" class="col-span-1 py-1">RSI Sobrevenda:</label>
+                <input type="number" id="rsi_oversell" value="30" class="col-span-1 p-1 rounded text-right">
+
+                <!-- EMA Curta -->
+                <label for="ema_curta" class="col-span-1 py-1">EMA Curta:</label>
+                <input type="number" id="ema_curta" value="9" class="col-span-1 p-1 rounded text-right">
+
+                <!-- EMA Longa -->
+                <label for="ema_longa" class="col-span-1 py-1">EMA Longa:</label>
+                <input type="number" id="ema_longa" value="21" class="col-span-1 p-1 rounded text-right">
+                
+                <!-- Stop Gain -->
+                <label for="stop_gain_percent" class="col-span-1 py-1">StopGain %:</label>
+                <input type="number" id="stop_gain_percent" value="2.0" step="0.1" class="col-span-1 p-1 rounded text-right">
+
+                <!-- Stop Loss -->
+                <label for="stop_loss_percent" class="col-span-1 py-1">StopLoss %:</label>
+                <input type="number" id="stop_loss_percent" value="2.0" step="0.1" class="col-span-1 p-1 rounded text-right">
+
+                <!-- Valor de Entrada -->
+                <label for="val_entrada" class="col-span-1 py-1">Val. entrada $:</label>
+                <input type="number" id="val_entrada" value="10.00" step="0.01" class="col-span-1 p-1 rounded text-right">
+
+                <!-- Tempo Gráfico -->
+                <label for="timeframe" class="col-span-1 py-1">Tempo Gráfico:</label>
+                <select id="timeframe" class="col-span-1 p-1 rounded">
+                    <option value="1m">1m</option>
+                    <option value="5m">5m</option>
+                    <option value="15m">15m</option>
+                    <option value="30m">30m</option>
+                    <option value="1h">1h</option>
+                </select>
+
+                <!-- Limite de Kendos -->
+                <label for="klimit" class="col-span-1 py-1">Lim Kendos:</label>
+                <select id="klimit" class="col-span-1 p-1 rounded">
+                    <option value="400">400</option>
+                    <option value="300">300</option>
+                    <option value="200">200</option>
+                    <option value="150">150</option>
+                    <option value="100">100</option>
+                    <option value="50">50</option>
+                    <option value="30">30</option>
+                </select>
+            </div>
+
+            <!-- Botões de Controle do Bot -->
+            <div class="mt-8 flex justify-between space-x-2">
+                <button onclick="startBot()" class="w-1/2 p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white font-bold transition duration-150 shadow-md" id="btn_start">INICIAR</button>
+                <button onclick="stopBot()" class="w-1/2 p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold transition duration-150 shadow-md" id="btn_stop">PARAR</button>
+            </div>
+        </div>
+
+        <!-- Main Content: Displays e Gráfico -->
+        <div class="flex-1 bg-white p-4 rounded-lg shadow-md flex flex-col space-y-4">
+            
+            <!-- Botões e Displays Dinâmicos -->
+            <div class="flex flex-wrap items-center justify-between gap-3 p-2 bg-gray-100 rounded-lg">
+                <!-- Botões Manuais -->
+                <div class="flex space-x-2">
+                    <button onclick="buySim()" class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold transition duration-150 shadow-md">COMPRAR (SIM)</button>
+                    <button onclick="sellSim()" class="px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white font-bold transition duration-150 shadow-md">VENDER (SIM)</button>
+                </div>
+
+                <!-- Displays de Status -->
+                <div class="text-right space-y-1 text-sm md:text-base">
+                    <p class="font-semibold">Posição: <span id="posicao_status" class="text-gray-500">FECHADA</span></p>
+                    <p class="font-semibold">Preço Atual: <span id="lbl_price_value" class="text-primary-blue font-extrabold">---</span> USDT</p>
+                    <p class="font-semibold">Lucro Atual: <span id="lbl_lucro_atual_value" class="text-gray-700 font-extrabold">0.0000</span> USDT</p>
+                </div>
+            </div>
+
+            <!-- Gráfico Chart.js -->
+            <div class="flex-1 min-h-[400px] md:min-h-0 relative">
+                <canvas id="chartCanvas"></canvas>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Rodapé (Simulando o Canvas Azul) -->
+    <footer class="bg-primary-blue text-white p-2 flex justify-end items-center h-10">
+        <div class="text-xs">
+            Status da API: 
+            <span id="api_status" class="disconnected font-bold">DESCONECTADO</span>
+        </div>
+    </footer>
+
+    <script>
+        // ====================================================================================
+        // Variáveis de Estado Global (Simulando o Backend Python)
+        // ====================================================================================
+        let chartInstance;
+        let updateInterval;
+        let mockPrice = 60000; 
+
+        // Estado do Bot (Baseado nas variáveis globais do seu código Python)
+        let botState = {
+            rodando: false,
+            Posicao: false,
+            Cotacao: 0.0,
+            SIMU_SALDO: 100.0,
+            SIMU_VAL_ENTRADA: 10.0,
+            SIMU_QNT_MOEDA: 0.0,
+            SIMU_LUCRO_TRADE: 0.0,
+            SIMU_CONT_TRADE: 0,
+            SIMU_CONT_GAIN: 0,
+            SIMU_CONT_LOSS: 0,
+            SIMU_COMPRA_MAN: false,
+            SIMU_VENDA_MAN: false,
+            SIMU_DESAB_AUTO: false,
+            SIMU_STOP_GAIN: 0.0,
+            SIMU_STOP_LOSS: 0.0,
+            historicoPrecos: [], // Para o gráfico
+        };
+
+        // ====================================================================================
+        // FUNÇÕES DE CÁLCULO DE INDICADORES (Simplificado em JS)
+        // ====================================================================================
+
+        /**
+         * Calcula a Exponential Moving Average (EMA)
+         * @param {number[]} data - Array de preços de fechamento
+         * @param {number} period - Período da EMA
+         * @returns {number[]} Array com valores da EMA
+         */
+        function calculateEMA(data, period) {
+            if (data.length < period) return Array(data.length).fill(null);
+            const k = 2 / (period + 1);
+            let emaArr = new Array(data.length).fill(null);
+            
+            // Calcula a primeira EMA (usando SMA inicial como ponto de partida)
+            let sum = 0;
+            for (let i = 0; i < period; i++) sum += data[i];
+            emaArr[period - 1] = sum / period;
+
+            // Calcula as EMAs subsequentes
+            for (let i = period; i < data.length; i++) {
+                emaArr[i] = (data[i] - emaArr[i - 1]) * k + emaArr[i - 1];
+            }
+            return emaArr;
+        }
+
+        /**
+         * Calcula o Relative Strength Index (RSI)
+         * @param {number[]} data - Array de preços de fechamento
+         * @param {number} period - Período do RSI
+         * @returns {number[]} Array com valores do RSI
+         */
+        function calculateRSI(data, period) {
+            const rsiArr = new Array(data.length).fill(null);
+            if (data.length < period + 1) return rsiArr;
+
+            let gains = [];
+            let losses = [];
+            let avgGain = 0;
+            let avgLoss = 0;
+
+            // Cálculo inicial de Ganhos/Perdas para o primeiro período
+            for (let i = 1; i <= period; i++) {
+                const change = data[i] - data[i - 1];
+                gains.push(Math.max(0, change));
+                losses.push(Math.max(0, -change));
+            }
+            avgGain = gains.reduce((a, b) => a + b, 0) / period;
+            avgLoss = losses.reduce((a, b) => a + b, 0) / period;
+
+            // Cálculo do primeiro RSI
+            const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+            rsiArr[period] = 100 - (100 / (1 + rs));
+
+            // Cálculo das próximas RSIs (usando EMA)
+            for (let i = period + 1; i < data.length; i++) {
+                const change = data[i] - data[i - 1];
+                const gain = Math.max(0, change);
+                const loss = Math.max(0, -change);
+
+                avgGain = (avgGain * (period - 1) + gain) / period;
+                avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+                const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+                rsiArr[i] = 100 - (100 / (1 + rs));
+            }
+
+            return rsiArr;
+        }
+
+        // ====================================================================================
+        // FUNÇÕES DE INTERFACE E GRÁFICO
+        // ====================================================================================
+
+        function initChart() {
+            const ctx = document.getElementById('chartCanvas').getContext('2d');
+            
+            // Destrói a instância anterior se existir
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Preço', data: [], borderColor: 'blue', borderWidth: 2, fill: false, yAxisID: 'price' },
+                        { label: 'EMA Curta', data: [], borderColor: 'green', borderWidth: 1, borderDash: [5, 5], fill: false, yAxisID: 'price' },
+                        { label: 'EMA Longa', data: [], borderColor: 'red', borderWidth: 1, fill: false, yAxisID: 'price' },
+                        { label: 'RSI (70)', data: [], borderColor: 'red', borderWidth: 0.5, pointStyle: false, fill: false, yAxisID: 'rsi', hidden: true }, // Nível 70
+                        { label: 'RSI (30)', data: [], borderColor: 'green', borderWidth: 0.5, pointStyle: false, fill: false, yAxisID: 'rsi', hidden: true }, // Nível 30
+                        { label: 'RSI', data: [], borderColor: 'purple', borderWidth: 2, fill: false, yAxisID: 'rsi' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    stacked: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: 'Preço, Médias Móveis e RSI' }
+                    },
+                    scales: {
+                        price: {
+                            type: 'linear',
+                            display: 'auto',
+                            position: 'left',
+                            title: { display: true, text: 'Preço (USDT)' }
+                        },
+                        rsi: {
+                            type: 'linear',
+                            display: 'auto',
+                            position: 'right',
+                            min: 0,
+                            max: 100,
+                            grid: { drawOnChartArea: false }, // Oculta a grade do RSI
+                            title: { display: true, text: 'RSI' },
+                            ticks: {
+                                callback: function(value, index, ticks) {
+                                    if (value === 30 || value === 70 || value === 50 || value === 0 || value === 100) return value;
+                                    return null;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateUI(lucroAtual) {
+            document.getElementById('lbl_price_value').textContent = botState.Cotacao.toFixed(4);
+            document.getElementById('saldo').value = botState.SIMU_SALDO.toFixed(4);
+            document.getElementById('lbl_lucro_atual_value').textContent = lucroAtual.toFixed(4);
+
+            const posicaoStatus = document.getElementById('posicao_status');
+            if (botState.Posicao) {
+                posicaoStatus.textContent = 'ABERTA';
+                posicaoStatus.classList.remove('text-gray-500');
+                posicaoStatus.classList.add('text-green-600', 'font-extrabold');
+            } else {
+                posicaoStatus.textContent = 'FECHADA';
+                posicaoStatus.classList.remove('text-green-600', 'font-extrabold');
+                posicaoStatus.classList.add('text-gray-500');
+            }
+        }
+
+        function updateChartData(data) {
+            if (!chartInstance) return;
+
+            const periodos = data.closes.map((_, i) => i);
+            const rsiLevel70 = Array(data.closes.length).fill(70);
+            const rsiLevel30 = Array(data.closes.length).fill(30);
+
+            chartInstance.data.labels = periodos;
+            chartInstance.data.datasets[0].data = data.closes;
+            chartInstance.data.datasets[1].data = data.emaCurta;
+            chartInstance.data.datasets[2].data = data.emaLonga;
+            chartInstance.data.datasets[3].data = rsiLevel70;
+            chartInstance.data.datasets[4].data = rsiLevel30;
+            chartInstance.data.datasets[5].data = data.rsi;
+
+            chartInstance.update();
+        }
+
+        // ====================================================================================
+        // FUNÇÕES DE TRADE E BOT
+        // ====================================================================================
+
+        /**
+         * Simula a obtenção de Klines e Indicadores
+         * NOTE: Em um ambiente real, você faria uma requisição AJAX para um backend (Flask/Proxy)
+         * para obter os dados Klines da Binance e calcular os indicadores.
+         */
+        async function getAndCalculateData() {
+            const klimit = parseInt(document.getElementById('klimit').value);
+            const rsi_period = parseInt(document.getElementById('rsi_period').value);
+            const ema_curta_period = parseInt(document.getElementById('ema_curta').value);
+            const ema_longa_period = parseInt(document.getElementById('ema_longa').value);
+            
+            // --- SIMULAÇÃO DE DADOS DE PREÇO (Klines) ---
+            // Simula uma flutuação aleatória a partir do preço base
+            if (botState.historicoPrecos.length === 0) {
+                 // Inicializa o histórico com klimit pontos
+                let currentPrice = mockPrice;
+                for (let i = 0; i < klimit; i++) {
+                    currentPrice += (Math.random() - 0.5) * currentPrice * 0.0005; // Pequena variação
+                    botState.historicoPrecos.push(currentPrice);
+                }
+            } else {
+                // Adiciona um novo ponto e remove o mais antigo
+                let lastPrice = botState.historicoPrecos[botState.historicoPrecos.length - 1];
+                // Simula a flutuação em tempo real (+- 0.05% do preço)
+                let newPrice = lastPrice + (Math.random() - 0.5) * lastPrice * 0.001;
+                botState.historicoPrecos.push(newPrice);
+                if (botState.historicoPrecos.length > klimit) {
+                    botState.historicoPrecos.shift();
+                }
+            }
+            
+            const closes = botState.historicoPrecos.slice(); // Preços para cálculo
+
+            // 1. Calcular Indicadores
+            const emaCurta = calculateEMA(closes, ema_curta_period);
+            const emaLonga = calculateEMA(closes, ema_longa_period);
+            const rsi = calculateRSI(closes, rsi_period);
+
+            // 2. Definir Cotação Atual (o último preço)
+            botState.Cotacao = closes[closes.length - 1];
+
+            return { closes, emaCurta, emaLonga, rsi };
+        }
+
+        /**
+         * Lógica de Trade (Simulando o operacao_simulada do Python)
+         */
+        async function botLoopLogic() {
+            if (!botState.rodando) return;
+
+            // 1. Obter e Calcular Dados
+            const data = await getAndCalculateData();
+            updateChartData(data);
+
+            const Cotacao = botState.Cotacao;
+            const SIMU_VAL_ENTRADA = parseFloat(document.getElementById('val_entrada').value);
+            const SIMU_STOP_GAIN_PERCENT = parseFloat(document.getElementById('stop_gain_percent').value);
+            const SIMU_STOP_LOSS_PERCENT = parseFloat(document.getElementById('stop_loss_percent').value);
+
+            // Valores de Stop em USDT (baseado no valor de entrada)
+            botState.SIMU_STOP_GAIN = (SIMU_STOP_GAIN_PERCENT / 100) * SIMU_VAL_ENTRADA;
+            botState.SIMU_STOP_LOSS = (-SIMU_STOP_LOSS_PERCENT / 100) * SIMU_VAL_ENTRADA;
+            
+            // Indicadores atuais
+            const rsi_atual = data.rsi[data.rsi.length - 1];
+            const ema_curta = data.emaCurta[data.emaCurta.length - 1];
+            const ema_longa = data.emaLonga[data.emaLonga.length - 1];
+            const ema_curta_prev = data.emaCurta[data.emaCurta.length - 2];
+            const ema_longa_prev = data.emaLonga[data.emaLonga.length - 2];
+            
+            let lucroAtual = 0.0;
+
+            // ------------------------------------
+            // Lógica de Posição Aberta (Calcula Lucro/Verifica Venda)
+            // ------------------------------------
+            if (botState.Posicao) {
+                // Calcula lucro atual (Não-Realizado)
+                const valorAtualMoeda = botState.SIMU_QNT_MOEDA * Cotacao;
+                lucroAtual = valorAtualMoeda - SIMU_VAL_ENTRADA;
+
+                // Condição de Cruzamento de Baixa (Sinal de Venda da Estratégia)
+                const sinalVendaEstrategia = (ema_curta_prev > ema_longa_prev) && (ema_curta < ema_longa);
+
+                // Condição de Venda
+                const condicaoVenda = 
+                    // Stop Gain ou Stop Loss (Automático)
+                    (!botState.SIMU_DESAB_AUTO && (lucroAtual >= botState.SIMU_STOP_GAIN || lucroAtual <= botState.SIMU_STOP_LOSS)) ||
+                    // Cruzamento de Baixa (Automático)
+                    (!botState.SIMU_DESAB_AUTO && sinalVendaEstrategia) ||
+                    // Venda Manual
+                    (botState.SIMU_VENDA_MAN);
+                
+                if (condicaoVenda) {
+                    console.log("SINAL DE VENDA DETECTADO!");
+                    
+                    // Cálculo da Venda
+                    const SIMU_LUCRO_VENDA = botState.SIMU_QNT_MOEDA * Cotacao;
+                    botState.SIMU_LUCRO_TRADE = SIMU_LUCRO_VENDA - SIMU_VAL_ENTRADA;
+                    botState.SIMU_SALDO += SIMU_LUCRO_VENDA;
+
+                    // Logs e Atualizações de Contadores
+                    const resultado = botState.SIMU_LUCRO_TRADE > 0 ? "GAIN! 💰📈" : "LOSS! 💸📉";
+                    console.log(`VENDA EXECUTADA. Lucro: ${botState.SIMU_LUCRO_TRADE.toFixed(4)}. Resultado: ${resultado}`);
+                    botState.SIMU_CONT_TRADE++;
+                    if (botState.SIMU_LUCRO_TRADE > 0) botState.SIMU_CONT_GAIN++;
+                    else botState.SIMU_CONT_LOSS++;
+
+                    // Reseta estado
+                    botState.Posicao = false;
+                    botState.SIMU_VENDA_MAN = false;
+                    botState.SIMU_DESAB_AUTO = false;
+                    botState.SIMU_QNT_MOEDA = 0.0;
+                }
+            }
+            
+            // ------------------------------------
+            // Lógica de Posição Fechada (Verifica Compra)
+            // ------------------------------------
+            else {
+                // Condição de Cruzamento de Alta (Sinal de Compra da Estratégia)
+                const sinalCompraEstrategia = (ema_curta_prev < ema_longa_prev) && (ema_curta > ema_longa) && (rsi_atual < 70);
+
+                // Condição de Compra
+                const condicaoCompra = 
+                    (!botState.SIMU_DESAB_AUTO && sinalCompraEstrategia) || // Compra Automática
+                    (botState.SIMU_COMPRA_MAN); // Compra Manual
+                
+                if (condicaoCompra) {
+                    console.log("SINAL DE COMPRA DETECTADO!");
+                    
+                    // Cálculo da Compra
+                    botState.SIMU_QNT_MOEDA = SIMU_VAL_ENTRADA / Cotacao;
+                    botState.SIMU_SALDO -= SIMU_VAL_ENTRADA;
+                    
+                    console.log(`COMPRA EXECUTADA. Qty: ${botState.SIMU_QNT_MOEDA.toFixed(8)}`);
+
+                    // Reseta estado
+                    botState.Posicao = true;
+                    botState.SIMU_COMPRA_MAN = false;
+                    botState.SIMU_DESAB_AUTO = false;
+                }
+            }
+
+            // 3. Atualizar a Interface
+            updateUI(lucroAtual);
+        }
+
+        // ====================================================================================
+        // FUNÇÕES DE BOTÕES
+        // ====================================================================================
+
+        function startBot() {
+            if (botState.rodando) return;
+            
+            // Garante que o saldo seja o valor do campo de entrada no início
+            botState.SIMU_SALDO = parseFloat(document.getElementById('saldo').value);
+            
+            // Inicializa a UI e o Gráfico
+            initChart();
+            
+            botState.rodando = true;
+            document.getElementById('api_status').textContent = 'CONECTADO';
+            document.getElementById('api_status').classList.replace('disconnected', 'connected');
+            
+            // Inicia o loop (substitui a thread Python)
+            updateInterval = setInterval(botLoopLogic, 2000); // Executa a cada 2 segundos
+            console.log("Bot INICIADO em modo SIMULADO.");
+            botLoopLogic(); // Executa imediatamente
+        }
+
+        function stopBot() {
+            if (!botState.rodando) return;
+            clearInterval(updateInterval);
+            botState.rodando = false;
+            document.getElementById('api_status').textContent = 'DESCONECTADO';
+            document.getElementById('api_status').classList.replace('connected', 'disconnected');
+            console.log("Bot PARADO.");
+        }
+
+        function buySim() {
+            if (botState.Posicao) {
+                console.log("Já em posição. Não pode comprar.");
+                return;
+            }
+            if (!botState.rodando) {
+                console.log("Bot deve estar INICIADO para dar comandos manuais.");
+                return;
+            }
+            botState.SIMU_COMPRA_MAN = true;
+            botState.SIMU_DESAB_AUTO = true; // Desabilita auto-trade por um ciclo
+            console.log("Comando: COMPRA MANUAL agendada.");
+        }
+
+        function sellSim() {
+            if (!botState.Posicao) {
+                console.log("Nenhuma posição aberta para vender.");
+                return;
+            }
+            if (!botState.rodando) {
+                console.log("Bot deve estar INICIADO para dar comandos manuais.");
+                return;
+            }
+            botState.SIMU_VENDA_MAN = true;
+            botState.SIMU_DESAB_AUTO = true; // Desabilita auto-trade por um ciclo
+            console.log("Comando: VENDA MANUAL agendada.");
+        }
+
+        // Inicializa o gráfico na primeira carga da página
+        document.addEventListener('DOMContentLoaded', () => {
+             // Garante o valor inicial correto
+            document.getElementById('saldo').value = botState.SIMU_SALDO.toFixed(4);
+            initChart();
+        });
+
+    </script>
+</body>
+</html>

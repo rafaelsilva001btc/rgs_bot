@@ -1,0 +1,108 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #ECECEC;
+    margin: 0;
+    padding: 0;
+}
+
+/* Cabeçalho */
+header {
+    width: 100%;
+    height: 40px;
+    background-color: #1E90FF;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* Rodapé */
+footer {
+    width: 100%;
+    height: 40px;
+    background-color: #1E90FF;
+    position: fixed;
+    bottom: 0;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 200px;
+    background-color: #C5C5C5;
+    padding: 10px;
+    height: calc(100vh - 80px);
+    position: fixed;
+    top: 40px;
+    left: 10px;
+    border: 1px solid #DFDFDF;
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    text-align: center;
+    font-size: 14px;
+}
+
+.sidebar label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.sidebar input, .sidebar select {
+    width: 100%;
+    padding: 4px;
+    margin-top: 2px;
+}
+
+/* Main panel */
+.main {
+    margin-left: 220px;
+    padding: 20px;
+}
+
+.top-buttons {
+    margin-bottom: 10px;
+}
+
+.top-buttons button {
+    padding: 8px 12px;
+    margin-right: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    color: white;
+}
+
+.top-buttons .start { background-color: green; }
+.top-buttons .stop { background-color: red; }
+.top-buttons .buy { background-color: green; }
+.top-buttons .sell { background-color: red; }
+
+/* Preço */
+.price-display {
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: blue;
+}
+
+/* Gráfico */
+#chart {
+    width: 100%;
+    height: 400px; /* altura fixa, Tkinter style */
+    border: 1px solid #999;
+}
+
+/* Status */
+.status {
+    position: fixed;
+    bottom: 50px;
+    right: 20px;
+    font-weight: bold;
+}
+
+.status.connected { color: green; }
+.status.disconnected { color: red; }
