@@ -9,6 +9,10 @@ from ta.trend import EMAIndicator
 # =========================
 # Configurações
 # =========================
+#INTERFACE COM TELEGRAM
+TELEGRAM_TOKEN = "8083480263:AAFdlSu5_ps9rfVBPUBzOntpvM7wU2F3mqQ"
+TELEGRAM_CHAT_ID = "826927449"
+
 API_KEY = ''
 API_SECRET = ''
 client = Client(API_KEY, API_SECRET)
@@ -132,3 +136,4 @@ def get_status():
         "quantidade_moeda": SIMU_QNT_MOEDA,
         "lucro_venda": SIMU_LUCRO_VENDA
     }
+
